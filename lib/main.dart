@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -30,7 +29,7 @@ class AnimeDXMainHolder extends StatefulWidget {
 }
 
 class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
-  int _bottomNavIndex = 2;
+  int _bottomNavIndex = 0; // Default to Home
   String _searchQuery = '';
 
   final List<Map<String, String>> _allAnimeList = [
@@ -71,6 +70,148 @@ class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
     );
   }
 
+  // 1. HOME SCREEN
+  Widget _buildHomeScreen() {
+    final featured = _allAnimeList.first;
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Featured Banner
+          GestureDetector(
+            onTap: () => _openPlayer(featured),
+            child: Stack(
+              alignment: Alignment.bottomLeft,
+              children: [
+                Image.network(
+                  featured['image']!,
+                  height: 240,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                Container(
+                  height: 240,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        featured['title']!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF640A),
+                        ),
+                        onPressed: () => _openPlayer(featured),
+                        icon: const Icon(Icons.play_arrow, color: Colors.white),
+                        label: const Text('Watch Now', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: Text(
+              'Trending Now',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+          SizedBox(
+            height: 190,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _allAnimeList.length,
+              itemBuilder: (context, index) {
+                final anime = _allAnimeList[index];
+                return GestureDetector(
+                  onTap: () => _openPlayer(anime),
+                  child: Container(
+                    width: 120,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              anime['image']!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          anime['title']!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 2. MY LISTS SCREEN
+  Widget _buildMyListsScreen() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text(
+          'My Watchlist',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 12),
+        ..._allAnimeList.take(2).map((anime) {
+          return Card(
+            color: const Color(0xFF1E1E1E),
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.network(anime['image']!, width: 50, height: 70, fit: BoxFit.cover),
+              ),
+              title: Text(anime['title']!, style: const TextStyle(color: Colors.white)),
+              subtitle: Text(anime['type']!, style: const TextStyle(color: Colors.grey)),
+              trailing: IconButton(
+                icon: const Icon(Icons.play_circle_fill, color: Color(0xFFFF640A)),
+                onPressed: () => _openPlayer(anime),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  // 3. BROWSE / SEARCH SCREEN
   Widget _buildBrowseScreen() {
     final filteredList = _allAnimeList.where((anime) {
       final title = anime['title']?.toLowerCase() ?? '';
@@ -117,20 +258,13 @@ class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
           padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Text(
             'Popular',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
         Expanded(
           child: filteredList.isEmpty
               ? const Center(
-                  child: Text(
-                    'No anime found',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
+                  child: Text('No anime found', style: TextStyle(color: Colors.grey, fontSize: 16)),
                 )
               : GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -155,10 +289,6 @@ class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
                                 anime['image']!,
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                errorBuilder: (ctx, err, stack) => Container(
-                                  color: Colors.grey[900],
-                                  child: const Icon(Icons.broken_image, color: Colors.grey),
-                                ),
                               ),
                             ),
                           ),
@@ -177,10 +307,7 @@ class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                anime['type']!,
-                                style: const TextStyle(color: Colors.grey, fontSize: 12),
-                              ),
+                              Text(anime['type']!, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                               const Icon(Icons.play_circle_fill, color: Color(0xFFFF640A), size: 18),
                             ],
                           ),
@@ -194,8 +321,63 @@ class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
     );
   }
 
+  // 4. SIMULCAST SCREEN
+  Widget _buildSimulcastScreen() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _allAnimeList.length,
+      itemBuilder: (context, index) {
+        final anime = _allAnimeList[index];
+        return Card(
+          color: const Color(0xFF1E1E1E),
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            leading: const Icon(Icons.calendar_today, color: Color(0xFFFF640A)),
+            title: Text(anime['title']!, style: const TextStyle(color: Colors.white)),
+            subtitle: const Text('New Episode drops today!', style: TextStyle(color: Colors.grey)),
+            trailing: const Chip(
+              label: Text('Simulcast', style: TextStyle(fontSize: 11, color: Colors.white)),
+              backgroundColor: Color(0xFFFF640A),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 5. ACCOUNT SCREEN
+  Widget _buildAccountScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          CircleAvatar(
+            radius: 45,
+            backgroundColor: Color(0xFFFF640A),
+            child: Icon(Icons.person, size: 50, color: Colors.white),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Anime DX User',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          Text('Free Tier Member', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final List<Widget> pages = [
+      _buildHomeScreen(),
+      _buildMyListsScreen(),
+      _buildBrowseScreen(),
+      _buildSimulcastScreen(),
+      _buildAccountScreen(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -209,7 +391,7 @@ class _AnimeDXMainHolderState extends State<AnimeDXMainHolder> {
           ),
         ),
       ),
-      body: SafeArea(child: _buildBrowseScreen()),
+      body: SafeArea(child: pages[_bottomNavIndex]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _bottomNavIndex,
         backgroundColor: const Color(0xFF121212),
@@ -257,9 +439,7 @@ class AnimePlayerScreen extends StatelessWidget {
                   fit: BoxFit.cover,
                   width: double.infinity,
                 ),
-                Container(
-                  color: Colors.black45,
-                ),
+                Container(color: Colors.black45),
                 const Icon(Icons.play_circle_outline, size: 64, color: Color(0xFFFF640A)),
               ],
             ),
